@@ -549,6 +549,10 @@ return [
     'copy' => 'Copy',
     'back_to_tokens' => 'Back to API tokens',
     'confirm_revoke_token' => 'Revoke this token? Integrations using it will stop working.',
+    'create_pin' => 'Admin PIN',
+    'create_pin_help' => 'Required for admin record creation.',
+    'create_pin_invalid' => 'The admin PIN is incorrect.',
+    'create_pin_not_configured' => 'Admin create PIN is not configured. Set ADMIN_CREATE_PIN in your .env file.',
 
     'webhooks' => 'Webhooks',
     'webhooks_subtitle' => 'Outbound HTTP notifications for commerce events.',

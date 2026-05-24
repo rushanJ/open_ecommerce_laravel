@@ -52,6 +52,44 @@ class ProductCrudTest extends TestCase
         ]);
     }
 
+    public function test_admin_create_pin_blocks_product_creation_when_incorrect(): void
+    {
+        config(['open_ecommerce_laravel.admin.create_pin' => '2468']);
+
+        $admin = $this->createAdminWithPermission(['products.create']);
+        $name = 'PIN Protected Product '.uniqid();
+        $payload = [
+            'product_type' => 'simple',
+            'name' => $name,
+            'status' => 'active',
+            'visibility' => 'visible',
+            'regular_price' => '1999.0000',
+            'stock_status' => 'in_stock',
+            'manage_stock' => '0',
+            'backorders_allowed' => '0',
+            'is_featured' => '0',
+        ];
+
+        $this->actingAs($admin, 'admin')
+            ->from(route('admin.products.create'))
+            ->post(route('admin.products.store'), $payload + [
+                'admin_create_pin' => '0000',
+            ])
+            ->assertRedirect(route('admin.products.create'))
+            ->assertSessionHasErrors(['admin_create_pin']);
+
+        $this->assertDatabaseMissing('products', ['name' => $name]);
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.products.store'), $payload + [
+                'admin_create_pin' => '2468',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('products', ['name' => $name]);
+    }
+
     public function test_slug_auto_generates_if_missing(): void
     {
         $admin = $this->createAdminWithPermission(['products.create']);

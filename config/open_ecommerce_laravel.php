@@ -16,6 +16,7 @@ return [
         ],
     ],
     'admin' => [
+        'create_pin' => env('ADMIN_CREATE_PIN'),
         'theme' => [
             'default_mode' => env('OPEN_ECOMMERCE_LARAVEL_ADMIN_THEME', 'light'),
             'brand_name' => env('OPEN_ECOMMERCE_LARAVEL_ADMIN_BRAND_NAME', 'open_ecommerce_laravel'),

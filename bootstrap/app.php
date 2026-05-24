@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeadersMiddleware::class,
+            \App\Http\Middleware\EnsureAdminCreatePin::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [
