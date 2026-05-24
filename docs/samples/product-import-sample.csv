@@ -1,0 +1,4 @@
+sku,product_type,name,slug,brand,categories,short_description,description,status,visibility,regular_price,sale_price,cost_price,stock_quantity,stock_status,manage_stock,weight,length,width,height,tax_class,meta_title,meta_description,variant_sku,variant_name,variant_regular_price,variant_sale_price,variant_stock_quantity,variant_stock_status
+IMP-SAMPLE-SIMPLE,simple,Sample Simple Tee,imp-sample-simple,SportCo,It Wears|Basics,Short sleeve tee,Cotton tee,draft,visible,19.9900,17.9900,10.0000,15.0000,in_stock,1,0.2000,10.0000,8.0000,6.0000,Standard,Sample Tee Meta,Sample tee description,,,,,
+IMP-SAMPLE-VAR,variable,Sample Variable Hoodie,imp-sample-var,SportCo,It Wears|Outerwear,,,draft,visible,0,,,,in_stock,0,,,,,Standard,,,,IMP-VAR-S,Small,49.9900,,12.0000,in_stock
+IMP-SAMPLE-VAR,variable,Sample Variable Hoodie,,SportCo,It Wears|Outerwear,,,draft,visible,0,,,,in_stock,0,,,,,Standard,,,,IMP-VAR-M,Medium,49.9900,,8.0000,in_stock
