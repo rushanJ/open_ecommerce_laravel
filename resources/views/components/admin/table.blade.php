@@ -1,11 +1,11 @@
-<div {{ $attributes->merge(['class' => 'rounded-xl border border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-900 shadow-sm overflow-hidden']) }}>
+<div {{ $attributes->merge(['class' => 'overflow-hidden rounded-3xl border border-white/70 bg-white/90 shadow-[0_24px_70px_-38px_rgba(15,23,42,0.45)] ring-1 ring-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/80 dark:ring-white/10']) }}>
     <div class="-mx-px overflow-x-auto">
         @isset($head)
-            <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
-                <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-800/80 dark:text-gray-400">
+            <table class="min-w-full divide-y divide-slate-100 text-sm dark:divide-white/10">
+                <thead class="sticky top-0 z-10 bg-slate-50/90 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 backdrop-blur dark:bg-slate-950/60 dark:text-slate-400">
                     {{ $head }}
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody class="divide-y divide-slate-100 dark:divide-white/10">
                     {{ $slot }}
                 </tbody>
             </table>

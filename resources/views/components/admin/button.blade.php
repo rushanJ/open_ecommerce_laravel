@@ -14,15 +14,15 @@
     };
 
     $variantClasses = match ($variant) {
-        'secondary' => 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 focus-visible:ring-gray-400',
-        'danger' => 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
-        'ghost' => 'bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:ring-gray-400',
-        default => 'text-white hover:opacity-90 focus-visible:ring-[color:var(--mk-admin-primary)]',
+        'secondary' => 'bg-white/85 text-slate-800 ring-1 ring-slate-900/10 hover:bg-white hover:shadow-lg dark:bg-white/10 dark:text-slate-100 dark:ring-white/10 dark:hover:bg-white/15 focus-visible:ring-slate-400',
+        'danger' => 'bg-red-600 text-white shadow-lg shadow-red-600/20 hover:bg-red-700 focus-visible:ring-red-500',
+        'ghost' => 'bg-transparent text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10 focus-visible:ring-slate-400',
+        default => 'text-white shadow-lg shadow-indigo-600/25 hover:-translate-y-0.5 hover:shadow-indigo-600/35 focus-visible:ring-[color:var(--mk-admin-primary)]',
     };
 
     $focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950';
 
-    $base = 'inline-flex items-center justify-center font-medium rounded-lg transition '.$focusRing.' '.$sizeClasses.' '.$variantClasses;
+    $base = 'admin-ripple inline-flex items-center justify-center overflow-hidden font-semibold rounded-2xl transition duration-200 '.$focusRing.' '.$sizeClasses.' '.$variantClasses;
 
     $primaryStyle = $variant === 'primary' ? 'background-color: var(--mk-admin-primary);' : '';
 @endphp

@@ -19,11 +19,11 @@
     ];
 @endphp
 
-<div class="space-y-2 px-4 pt-4 sm:px-6 lg:px-8" aria-live="polite">
+<div class="mb-6 space-y-2" aria-live="polite">
     @foreach ($flashTypes as $key => $meta)
         @if (session()->has($key))
             <div
-                class="flex gap-3 rounded-lg border px-4 py-3 text-sm {{ $meta['wrap'] }}"
+                class="flex gap-3 rounded-2xl border px-4 py-3 text-sm shadow-sm {{ $meta['wrap'] }}"
                 role="{{ $key === 'error' ? 'alert' : 'status' }}"
             >
                 <span class="sr-only">{{ $meta['label'] }}</span>

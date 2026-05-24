@@ -56,7 +56,7 @@
                                     :class="{ 'hidden': failed[selected] }"
                                     loading="eager"
                                     @load="failed[selected] = false"
-                                    @error="failed[selected] = true"
+                                    x-on:error="failed[selected] = true"
                                 >
                             </template>
                             <div x-show="failed[selected]" x-cloak class="absolute inset-0 flex h-full w-full items-center justify-center text-slate-400">
@@ -81,7 +81,7 @@
                                             :alt="image.alt"
                                             class="h-full w-full object-cover transition group-hover:scale-105"
                                             loading="lazy"
-                                            @error="$event.target.classList.add('hidden'); $event.target.nextElementSibling.classList.remove('hidden')"
+                                            x-on:error="$event.target.classList.add('hidden'); $event.target.nextElementSibling.classList.remove('hidden')"
                                         >
                                         <span class="hidden text-xs font-black text-blue-700">{{ $fallbackLabel }}</span>
                                     </span>

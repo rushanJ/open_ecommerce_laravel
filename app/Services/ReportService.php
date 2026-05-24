@@ -36,14 +36,24 @@ class ReportService
         $refundedTotal = (float) (clone $salesOrders)->sum('refunded_total');
         $netSales = max(0.0, $grossSales - $refundedTotal);
         $averageOrderValue = $paidOrders > 0 ? ($grossSales / $paidOrders) : 0.0;
+        $netProfit = $this->netProfit($filters);
 
         $newCustomers = $this->applyDateRange(Customer::query(), 'created_at', $filters)->count();
+        $totalCustomers = Customer::query()->count();
 
         $lowStockProducts = Product::query()
             ->where('manage_stock', true)
             ->whereNotNull('low_stock_threshold')
             ->whereNotNull('stock_quantity')
             ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+            ->count();
+
+        $outOfStockProducts = Product::query()
+            ->where('manage_stock', true)
+            ->where(function (Builder $query): void {
+                $query->where('stock_status', 'out_of_stock')
+                    ->orWhere('stock_quantity', '<=', 0);
+            })
             ->count();
 
         $recentOrders = (clone $orders)
@@ -65,13 +75,23 @@ class ReportService
             'cancelled_orders' => $cancelledOrders,
             'gross_sales' => round($grossSales, 4),
             'net_sales' => round($netSales, 4),
+            'net_profit' => round($netProfit, 4),
             'refunded_total' => round($refundedTotal, 4),
             'average_order_value' => round($averageOrderValue, 4),
             'new_customers' => $newCustomers,
+            'total_customers' => $totalCustomers,
             'low_stock_products' => $lowStockProducts,
+            'out_of_stock_products' => $outOfStockProducts,
+            'conversion_rate' => $totalOrders > 0 ? round(($paidOrders / $totalOrders) * 100, 2) : 0.0,
+            'customer_retention' => $this->customerRetention($filters),
             'top_products' => $topProducts,
             'recent_orders' => $recentOrders,
             'recent_payments' => $recentPayments,
+            'revenue_trend' => $this->revenueTrend($filters),
+            'order_statuses' => $this->orderStatuses($filters),
+            'payment_sources' => $this->paymentSources($filters),
+            'top_categories' => $this->topCategories($filters, 6),
+            'stock_health' => $this->stockHealth(),
         ];
     }
 
@@ -210,6 +230,198 @@ class ReportService
             ->orderByDesc('used_count_calc');
 
         return $query->paginate(20)->withQueryString();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function netProfit(array $filters): float
+    {
+        $orders = $this->salesOrdersQuery($filters)->select('id');
+
+        return (float) (OrderItem::query()
+            ->joinSub($orders, 'paid_orders', fn ($j) => $j->on('order_items.order_id', '=', 'paid_orders.id'))
+            ->leftJoin('products', 'products.id', '=', 'order_items.product_id')
+            ->selectRaw('SUM(order_items.total - (COALESCE(products.cost_price, 0) * order_items.quantity)) as profit')
+            ->value('profit') ?? 0);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{labels: list<string>, revenue: list<float>, orders: list<int>}
+     */
+    private function revenueTrend(array $filters, int $days = 14): array
+    {
+        $to = ($this->parseDate($filters['date_to'] ?? null) ?? now())->copy()->startOfDay();
+        $from = ($this->parseDate($filters['date_from'] ?? null) ?? $to->copy()->subDays($days - 1))->copy()->startOfDay();
+
+        if ($from->gt($to)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        if ($from->diffInDays($to) > 30) {
+            $from = $to->copy()->subDays(30);
+        }
+
+        $rangeFilters = array_merge($filters, [
+            'date_from' => $from->toDateString(),
+            'date_to' => $to->toDateString(),
+        ]);
+
+        $rows = $this->salesOrdersQuery($rangeFilters)
+            ->selectRaw('DATE(placed_at) as period')
+            ->selectRaw('COUNT(*) as orders_count')
+            ->selectRaw('SUM(grand_total) as revenue')
+            ->groupBy('period')
+            ->orderBy('period')
+            ->get()
+            ->keyBy(fn ($row) => Carbon::parse((string) $row->period)->toDateString());
+
+        $labels = [];
+        $revenue = [];
+        $orders = [];
+
+        for ($day = $from->copy(); $day->lte($to); $day->addDay()) {
+            $key = $day->toDateString();
+            $row = $rows->get($key);
+            $labels[] = $day->format('M j');
+            $revenue[] = round((float) ($row->revenue ?? 0), 2);
+            $orders[] = (int) ($row->orders_count ?? 0);
+        }
+
+        return compact('labels', 'revenue', 'orders');
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, array{status: string, total: int}>
+     */
+    private function orderStatuses(array $filters): Collection
+    {
+        return $this->ordersBaseQuery($filters)
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => [
+                'status' => (string) ($row->status ?? 'unknown'),
+                'total' => (int) ($row->total ?? 0),
+            ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, array{source: string, amount: float}>
+     */
+    private function paymentSources(array $filters): Collection
+    {
+        return $this->applyDateRange(
+            Payment::query()->leftJoin('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id'),
+            'payments.paid_at',
+            $filters
+        )
+            ->selectRaw("COALESCE(payment_methods.provider, payment_methods.name, 'Manual') as source")
+            ->selectRaw('SUM(payments.amount) as amount')
+            ->whereIn('payments.status', ['paid', 'captured', 'succeeded', 'completed'])
+            ->groupBy('source')
+            ->orderByDesc('amount')
+            ->limit(6)
+            ->get()
+            ->map(fn ($row) => [
+                'source' => (string) ($row->source ?? 'Manual'),
+                'amount' => (float) ($row->amount ?? 0),
+            ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, array{name: string, revenue: float}>
+     */
+    private function topCategories(array $filters, int $limit): Collection
+    {
+        $orders = $this->salesOrdersQuery($filters)->select('id');
+
+        return OrderItem::query()
+            ->joinSub($orders, 'paid_orders', fn ($j) => $j->on('order_items.order_id', '=', 'paid_orders.id'))
+            ->leftJoin('product_categories', 'product_categories.product_id', '=', 'order_items.product_id')
+            ->leftJoin('categories', 'categories.id', '=', 'product_categories.category_id')
+            ->selectRaw("COALESCE(categories.name, 'Uncategorized') as name")
+            ->selectRaw('SUM(order_items.total) as revenue')
+            ->groupBy('name')
+            ->orderByDesc('revenue')
+            ->limit($limit)
+            ->get()
+            ->map(fn ($row) => [
+                'name' => (string) ($row->name ?? 'Uncategorized'),
+                'revenue' => (float) ($row->revenue ?? 0),
+            ]);
+    }
+
+    /**
+     * @return array{low: int, out: int, healthy: int, fast_selling: int}
+     */
+    private function stockHealth(): array
+    {
+        $low = Product::query()
+            ->where('manage_stock', true)
+            ->whereNotNull('low_stock_threshold')
+            ->whereNotNull('stock_quantity')
+            ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+            ->count();
+
+        $out = Product::query()
+            ->where('manage_stock', true)
+            ->where(function (Builder $query): void {
+                $query->where('stock_status', 'out_of_stock')
+                    ->orWhere('stock_quantity', '<=', 0);
+            })
+            ->count();
+
+        $healthy = Product::query()
+            ->where('manage_stock', true)
+            ->where('stock_quantity', '>', 0)
+            ->where(function (Builder $query): void {
+                $query->whereNull('low_stock_threshold')
+                    ->orWhereColumn('stock_quantity', '>', 'low_stock_threshold');
+            })
+            ->count();
+
+        $fastSelling = OrderItem::query()
+            ->where('created_at', '>=', now()->subDays(7))
+            ->distinct('product_id')
+            ->count('product_id');
+
+        return [
+            'low' => (int) $low,
+            'out' => (int) $out,
+            'healthy' => (int) $healthy,
+            'fast_selling' => (int) $fastSelling,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{repeat_customers: int, rate: float}
+     */
+    private function customerRetention(array $filters): array
+    {
+        $orders = $this->salesOrdersQuery($filters)
+            ->whereNotNull('customer_id')
+            ->select('customer_id');
+
+        $rows = DB::query()
+            ->fromSub($orders, 'orders')
+            ->selectRaw('customer_id, COUNT(*) as orders_count')
+            ->groupBy('customer_id')
+            ->get();
+
+        $total = $rows->count();
+        $repeat = $rows->filter(fn ($row) => (int) $row->orders_count > 1)->count();
+
+        return [
+            'repeat_customers' => $repeat,
+            'rate' => $total > 0 ? round(($repeat / $total) * 100, 2) : 0.0,
+        ];
     }
 
     /**
