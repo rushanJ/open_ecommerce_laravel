@@ -38,31 +38,33 @@
                 @if($latestOrders->isEmpty())
                     <p class="mt-3 text-sm text-slate-600">{{ __('customer.no_orders_yet') }}</p>
                 @else
-                    <div class="mt-4 overflow-x-auto">
-                        <table class="min-w-full text-left text-sm">
-                            <thead class="text-xs uppercase tracking-wide text-slate-500">
-                                <tr>
-                                    <th class="py-2 pr-4">{{ __('customer.order_number') }}</th>
-                                    <th class="py-2 pr-4">{{ __('customer.date') }}</th>
-                                    <th class="py-2 pr-4">{{ __('customer.total') }}</th>
-                                    <th class="py-2"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                @foreach($latestOrders as $order)
+                    <div class="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                     <tr>
-                                        <td class="py-3 pr-4 font-semibold text-slate-900">{{ $order->order_number }}</td>
-                                        <td class="py-3 pr-4 text-slate-600">{{ optional($order->created_at)->format('Y-m-d') }}</td>
-                                        <td class="py-3 pr-4 text-slate-600">{{ number_format((float) $order->grand_total, 2) }}</td>
-                                        <td class="py-3 text-right">
-                                            <a href="{{ route('customer.account.orders.show', $order) }}" class="font-semibold text-emerald-700 hover:text-emerald-800">
-                                                {{ __('customer.view') }}
-                                            </a>
-                                        </td>
+                                        <th class="px-4 py-3">{{ __('customer.order_number') }}</th>
+                                        <th class="px-4 py-3">{{ __('customer.date') }}</th>
+                                        <th class="px-4 py-3">{{ __('customer.total') }}</th>
+                                        <th class="px-4 py-3"></th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach($latestOrders as $order)
+                                        <tr>
+                                            <td class="px-4 py-3 font-semibold text-slate-900">{{ $order->order_number }}</td>
+                                            <td class="px-4 py-3 text-slate-600">{{ optional($order->created_at)->format('Y-m-d') }}</td>
+                                            <td class="px-4 py-3 text-slate-600">{{ number_format((float) $order->grand_total, 2) }}</td>
+                                            <td class="px-4 py-3 text-right">
+                                                <a href="{{ route('customer.account.orders.show', $order) }}" class="font-semibold text-emerald-700 hover:text-emerald-800">
+                                                    {{ __('customer.view') }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 @endif
             </div>
